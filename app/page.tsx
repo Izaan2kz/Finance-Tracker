@@ -400,7 +400,7 @@ export default function HomePage() {
       </motion.nav>
 
       {/* Hero */}
-      <motion.section ref={heroRef} style={{ opacity: heroOpacity, scale: heroScale }} className="relative flex items-center justify-center min-h-screen pt-16">
+      <motion.section ref={heroRef} style={{ opacity: heroOpacity, scale: heroScale }} className="relative flex items-center justify-center min-h-screen">
         <div className="relative mx-auto max-w-3xl px-6 text-center">
           <h1 className="text-5xl font-bold tracking-tight leading-[1.08] sm:text-7xl lg:text-8xl font-[family-name:var(--font-heading)]">
             <TextReveal className="block">Money, but</TextReveal>
@@ -418,13 +418,6 @@ export default function HomePage() {
             <span className="text-xs text-slate-500 flex items-center gap-1.5"><MousePointerClick className="h-3.5 w-3.5" />No credit card required</span>
           </motion.div>
 
-          {!prefersReduced && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }} className="mt-16 flex justify-center">
-              <motion.div animate={{ y: [0, 8, 0] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }} className="h-10 w-6 rounded-full border border-white/[0.08] flex items-start justify-center p-1.5">
-                <motion.div className="h-1.5 w-1.5 rounded-full bg-slate-500" />
-              </motion.div>
-            </motion.div>
-          )}
         </div>
       </motion.section>
 
