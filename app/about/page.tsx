@@ -16,7 +16,7 @@ function GridBg() {
 const sections = [
   { icon: Target, title: "Our Mission", color: "blue", body: "Financer exists to make personal finance management simple, visual, and intelligent. We believe everyone deserves to understand where their money goes — without spreadsheets, manual calculations, or complicated software." },
   { icon: Layers, title: "What We Do", color: "sky", body: "Financer lets you track income and expenses, visualize spending patterns with interactive charts, and get AI-powered insights that help you make better financial decisions. Every feature is designed to be fast, intuitive, and useful from day one." },
-  { icon: Server, title: "Our Stack", color: "red", body: "Built with Next.js, Supabase, Prisma, and Google Gemini — Financer is a production-grade application that prioritizes security, performance, and reliability. Your data is encrypted and stored securely with Supabase's enterprise-grade infrastructure." },
+  { icon: Server, title: "Our Stack", color: "red", body: "Built with Next.js, Supabase, and Google Gemini — Financer is a production-grade application that prioritizes security, performance, and reliability. Your data is encrypted and stored securely with Supabase's enterprise-grade infrastructure." },
   { icon: Heart, title: "Free Forever", color: "violet", body: "Financer is completely free to use. No hidden fees, no premium tiers, no credit card required. We believe financial awareness should be accessible to everyone." },
 ];
 

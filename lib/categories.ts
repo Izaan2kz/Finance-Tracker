@@ -1,3 +1,5 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 export const defaultCategories = [
   { name: "Food & Dining", icon: "🍔", color: "#F97316" },
   { name: "Transport", icon: "🚗", color: "#3B82F6" },
@@ -10,19 +12,22 @@ export const defaultCategories = [
   { name: "Other", icon: "📦", color: "#9CA3AF" },
 ];
 
-export async function seedDefaultCategories(userId: string) {
-  const { prisma } = await import("@/lib/prisma");
+export async function seedDefaultCategories(supabase: SupabaseClient, userId: string) {
+  const { data: existing } = await supabase
+    .from("categories")
+    .select("id")
+    .eq("user_id", userId)
+    .limit(1);
 
-  const existing = await prisma.category.findFirst({ where: { userId } });
-  if (existing) return;
+  if (existing && existing.length > 0) return;
 
-  await prisma.category.createMany({
-    data: defaultCategories.map((cat) => ({
-      userId,
+  await supabase.from("categories").insert(
+    defaultCategories.map((cat) => ({
+      user_id: userId,
       name: cat.name,
       icon: cat.icon,
       color: cat.color,
-      isDefault: true,
-    })),
-  });
+      is_default: true,
+    }))
+  );
 }

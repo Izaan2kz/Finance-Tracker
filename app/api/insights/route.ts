@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { getAuthenticatedUser, unauthorizedResponse } from "@/lib/auth";
 import { generateInsight } from "@/lib/gemini";
 import { insightRequestSchema } from "@/lib/validations";
@@ -9,6 +9,7 @@ export async function POST(request: NextRequest) {
   const user = await getAuthenticatedUser();
   if (!user) return unauthorizedResponse();
 
+  const supabase = await createServerSupabaseClient();
   const body = await request.json();
   const parsed = insightRequestSchema.safeParse(body);
 
@@ -23,33 +24,36 @@ export async function POST(request: NextRequest) {
   const { from, to, label } = getScopeRange(scope);
 
   if (!forceRegenerate) {
-    const cached = await prisma.aiInsight.findFirst({
-      where: { userId: user.id, scope, scopeValue: label },
-      orderBy: { createdAt: "desc" },
-    });
+    const { data: cached } = await supabase
+      .from("ai_insights")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("scope", scope)
+      .eq("scope_value", label)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
     if (cached) {
       return NextResponse.json({
         id: cached.id,
         response: cached.response,
-        createdAt: cached.createdAt.toISOString(),
+        createdAt: cached.created_at,
         scope: cached.scope,
-        scopeValue: cached.scopeValue,
+        scopeValue: cached.scope_value,
       });
     }
   }
 
-  const transactions = await prisma.transaction.findMany({
-    where: {
-      userId: user.id,
-      date: { gte: from, lte: to },
-    },
-    include: {
-      category: { select: { name: true } },
-    },
-    orderBy: { date: "asc" },
-  });
+  const { data: transactions } = await supabase
+    .from("transactions")
+    .select("*, category:categories(name)")
+    .eq("user_id", user.id)
+    .gte("date", from.toISOString().split("T")[0])
+    .lte("date", to.toISOString().split("T")[0])
+    .order("date");
 
-  if (transactions.length === 0) {
+  if (!transactions || transactions.length === 0) {
     return NextResponse.json(
       { error: "No transactions found for this period" },
       { status: 400 }
@@ -58,29 +62,31 @@ export async function POST(request: NextRequest) {
 
   const txData = transactions.map((t) => ({
     type: t.type,
-    amount: t.amount.toNumber(),
+    amount: Number(t.amount),
     description: t.description,
-    date: t.date.toISOString().split("T")[0],
+    date: t.date,
     category: t.category?.name || "Uncategorized",
   }));
 
   const response = await generateInsight(txData, scope, label);
 
-  const insight = await prisma.aiInsight.create({
-    data: {
-      userId: user.id,
+  const { data: insight } = await supabase
+    .from("ai_insights")
+    .insert({
+      user_id: user.id,
       prompt: `Analysis for ${scope} (${label})`,
       response,
       scope,
-      scopeValue: label,
-    },
-  });
+      scope_value: label,
+    })
+    .select()
+    .single();
 
   return NextResponse.json({
-    id: insight.id,
-    response: insight.response,
-    createdAt: insight.createdAt.toISOString(),
-    scope: insight.scope,
-    scopeValue: insight.scopeValue,
+    id: insight?.id,
+    response: insight?.response || response,
+    createdAt: insight?.created_at,
+    scope: insight?.scope,
+    scopeValue: insight?.scope_value,
   });
 }

@@ -472,7 +472,7 @@ export default function HomePage() {
             {[
               { name: "Next.js", desc: "React Framework", icon: "N" },
               { name: "Supabase", desc: "Auth & Database", icon: "S" },
-              { name: "Prisma", desc: "Type-safe ORM", icon: "P" },
+              { name: "Tailwind", desc: "Utility-first CSS", icon: "T" },
               { name: "Gemini", desc: "AI Insights", icon: "G" },
             ].map((tech, i) => (
               <ScrollItem key={tech.name} index={i} direction="up">

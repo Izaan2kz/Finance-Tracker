@@ -1,24 +1,40 @@
-import { Prisma } from "@prisma/client";
-
 export type TransactionType = "INCOME" | "EXPENSE";
 
-export interface TransactionWithCategory {
+export interface User {
   id: string;
-  userId: string;
-  categoryId: string | null;
+  supabase_id: string;
+  email: string;
+  name: string | null;
+  monthly_budget: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Category {
+  id: string;
+  user_id: string;
+  name: string;
+  icon: string | null;
+  color: string | null;
+  is_default: boolean;
+  created_at: string;
+}
+
+export interface Transaction {
+  id: string;
+  user_id: string;
+  category_id: string | null;
   type: TransactionType;
-  amount: Prisma.Decimal;
+  amount: number;
   description: string;
   note: string | null;
-  date: Date;
-  createdAt: Date;
-  updatedAt: Date;
-  category: {
-    id: string;
-    name: string;
-    icon: string | null;
-    color: string | null;
-  } | null;
+  date: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TransactionWithCategory extends Transaction {
+  category: Pick<Category, "id" | "name" | "icon" | "color"> | null;
 }
 
 export interface CategorySummary {

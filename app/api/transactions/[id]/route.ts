@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { getAuthenticatedUser, unauthorizedResponse } from "@/lib/auth";
 import { updateTransactionSchema } from "@/lib/validations";
 
@@ -10,14 +10,17 @@ export async function PATCH(
   const user = await getAuthenticatedUser();
   if (!user) return unauthorizedResponse();
 
+  const supabase = await createServerSupabaseClient();
   const { id } = await params;
 
-  const existing = await prisma.transaction.findFirst({
-    where: { id, userId: user.id },
-  });
-  if (!existing) {
-    return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
-  }
+  const { data: existing } = await supabase
+    .from("transactions")
+    .select("id")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!existing) return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
 
   const body = await request.json();
   const parsed = updateTransactionSchema.safeParse(body);
@@ -29,27 +32,24 @@ export async function PATCH(
     );
   }
 
-  const data: Record<string, unknown> = {};
-  if (parsed.data.type !== undefined) data.type = parsed.data.type;
-  if (parsed.data.amount !== undefined) data.amount = parsed.data.amount;
-  if (parsed.data.description !== undefined) data.description = parsed.data.description;
-  if (parsed.data.categoryId !== undefined) data.categoryId = parsed.data.categoryId;
-  if (parsed.data.date !== undefined) data.date = new Date(parsed.data.date);
-  if (parsed.data.note !== undefined) data.note = parsed.data.note;
+  const updates: Record<string, unknown> = {};
+  if (parsed.data.type !== undefined) updates.type = parsed.data.type;
+  if (parsed.data.amount !== undefined) updates.amount = parsed.data.amount;
+  if (parsed.data.description !== undefined) updates.description = parsed.data.description;
+  if (parsed.data.categoryId !== undefined) updates.category_id = parsed.data.categoryId;
+  if (parsed.data.date !== undefined) updates.date = parsed.data.date;
+  if (parsed.data.note !== undefined) updates.note = parsed.data.note;
 
-  const transaction = await prisma.transaction.update({
-    where: { id },
-    data,
-    include: {
-      category: { select: { id: true, name: true, icon: true, color: true } },
-    },
-  });
+  const { data: transaction, error } = await supabase
+    .from("transactions")
+    .update(updates)
+    .eq("id", id)
+    .select("*, category:categories(id, name, icon, color)")
+    .single();
 
-  return NextResponse.json({
-    ...transaction,
-    amount: transaction.amount.toNumber(),
-    date: transaction.date.toISOString().split("T")[0],
-  });
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  return NextResponse.json(transaction);
 }
 
 export async function DELETE(
@@ -59,16 +59,21 @@ export async function DELETE(
   const user = await getAuthenticatedUser();
   if (!user) return unauthorizedResponse();
 
+  const supabase = await createServerSupabaseClient();
   const { id } = await params;
 
-  const existing = await prisma.transaction.findFirst({
-    where: { id, userId: user.id },
-  });
-  if (!existing) {
-    return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
-  }
+  const { data: existing } = await supabase
+    .from("transactions")
+    .select("id")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
 
-  await prisma.transaction.delete({ where: { id } });
+  if (!existing) return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
+
+  const { error } = await supabase.from("transactions").delete().eq("id", id);
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ success: true });
 }

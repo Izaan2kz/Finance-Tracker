@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { prisma } from "@/lib/prisma";
-import { seedDefaultCategories } from "@/lib/categories";
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
+  const next = searchParams.get("next") ?? "/dashboard";
 
   if (code) {
     const response = NextResponse.redirect(`${origin}${next}`);
@@ -28,26 +26,8 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-
-    if (!error && data.user) {
-      let user = await prisma.user.findUnique({
-        where: { supabaseId: data.user.id },
-      });
-
-      if (!user) {
-        user = await prisma.user.create({
-          data: {
-            supabaseId: data.user.id,
-            email: data.user.email!,
-            name: data.user.user_metadata?.full_name || null,
-          },
-        });
-        await seedDefaultCategories(user.id);
-      }
-
-      return response;
-    }
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error) return response;
   }
 
   return NextResponse.redirect(`${request.nextUrl.origin}/login?error=auth`);

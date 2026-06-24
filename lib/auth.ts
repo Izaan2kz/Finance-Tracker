@@ -1,9 +1,9 @@
 import { createServerSupabaseClient } from "@/lib/supabase-server";
-import { prisma } from "@/lib/prisma";
 import { seedDefaultCategories } from "@/lib/categories";
 import { NextResponse } from "next/server";
+import type { User } from "@/types";
 
-export async function getAuthenticatedUser() {
+export async function getAuthenticatedUser(): Promise<User | null> {
   const supabase = await createServerSupabaseClient();
   const {
     data: { user: supabaseUser },
@@ -11,22 +11,28 @@ export async function getAuthenticatedUser() {
 
   if (!supabaseUser) return null;
 
-  let user = await prisma.user.findUnique({
-    where: { supabaseId: supabaseUser.id },
-  });
+  const { data: user } = await supabase
+    .from("users")
+    .select("*")
+    .eq("supabase_id", supabaseUser.id)
+    .single();
 
-  if (!user) {
-    user = await prisma.user.create({
-      data: {
-        supabaseId: supabaseUser.id,
-        email: supabaseUser.email!,
-        name: supabaseUser.user_metadata?.full_name || null,
-      },
-    });
-    await seedDefaultCategories(user.id);
-  }
+  if (user) return user;
 
-  return user;
+  const { data: newUser, error } = await supabase
+    .from("users")
+    .insert({
+      supabase_id: supabaseUser.id,
+      email: supabaseUser.email!,
+      name: supabaseUser.user_metadata?.full_name || null,
+    })
+    .select()
+    .single();
+
+  if (error || !newUser) return null;
+
+  await seedDefaultCategories(supabase, newUser.id);
+  return newUser;
 }
 
 export function unauthorizedResponse() {
