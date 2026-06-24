@@ -393,7 +393,7 @@ export default function HomePage() {
             </div>
             <div className="flex items-center gap-2">
               <Link href="/login" className="rounded-lg px-4 py-1.5 text-sm text-slate-400 hover:text-white transition-colors duration-200 cursor-pointer">Log in</Link>
-              <Link href="/login" className="rounded-xl bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-500 transition-colors duration-200 cursor-pointer">Sign up free</Link>
+              <Link href="/login?signup=true" className="rounded-xl bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-500 transition-colors duration-200 cursor-pointer">Sign up free</Link>
             </div>
           </div>
         </div>
@@ -412,7 +412,7 @@ export default function HomePage() {
           </motion.p>
 
           <motion.div initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 0.6 }} className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-            <MagneticButton href="/login" className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 hover:shadow-blue-600/40 hover:bg-blue-500 transition-all duration-200 cursor-pointer">
+            <MagneticButton href="/login?signup=true" className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 hover:shadow-blue-600/40 hover:bg-blue-500 transition-all duration-200 cursor-pointer">
               Start for free <ArrowRight className="h-4 w-4" />
             </MagneticButton>
             <span className="text-xs text-slate-500 flex items-center gap-1.5"><MousePointerClick className="h-3.5 w-3.5" />No credit card required</span>

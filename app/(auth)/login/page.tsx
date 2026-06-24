@@ -2,16 +2,18 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle, User } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
 
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(searchParams.get("signup") === "true");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -19,7 +21,12 @@ export default function LoginPage() {
   const [error, setError] = useState("");
 
   const validateForm = (): string | null => {
+    if (isSignUp && name.trim().length < 2) return "Please enter your full name.";
+    if (!email.trim()) return "Please enter your email.";
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) return "Please enter a valid email address.";
     if (!email.endsWith("@gmail.com")) return "Only Gmail domain is accepted.";
+    if (!password) return "Please enter your password.";
     if (isSignUp) {
       const missing: string[] = [];
       if (password.length < 8) missing.push("at least 8 characters");
@@ -42,7 +49,7 @@ export default function LoginPage() {
 
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: name.trim() } } });
         if (error) throw error;
         router.push("/dashboard");
         router.refresh();
@@ -101,17 +108,41 @@ export default function LoginPage() {
 
           {/* Form */}
           <form onSubmit={handleEmailAuth} className="space-y-5">
+            <AnimatePresence>
+              {isSignUp && (
+                <motion.div
+                  key="name-field"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  <label htmlFor="name" className="block text-xs font-medium text-slate-400 mb-2 uppercase tracking-wider">Full Name</label>
+                  <div className="relative mb-5">
+                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-600" />
+                    <input
+                      id="name"
+                      type="text"
+                      placeholder="John Doe"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] pl-10 pr-4 py-3 text-sm text-slate-100 placeholder-slate-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/30 focus:bg-white/[0.06]"
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <div>
               <label htmlFor="email" className="block text-xs font-medium text-slate-400 mb-2 uppercase tracking-wider">Email</label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-600" />
                 <input
                   id="email"
-                  type="email"
+                  type="text"
                   placeholder="yourname@gmail.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  required
                   className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] pl-10 pr-4 py-3 text-sm text-slate-100 placeholder-slate-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/30 focus:bg-white/[0.06]"
                 />
               </div>
@@ -127,8 +158,6 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={8}
                   className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] pl-10 pr-11 py-3 text-sm text-slate-100 placeholder-slate-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/30 focus:bg-white/[0.06]"
                 />
                 <button
@@ -186,7 +215,7 @@ export default function LoginPage() {
             {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
             <button
               type="button"
-              onClick={() => { setIsSignUp(!isSignUp); setError(""); setPassword(""); }}
+              onClick={() => { setIsSignUp(!isSignUp); setError(""); setPassword(""); setName(""); }}
               className="text-blue-400 hover:text-blue-300 font-medium cursor-pointer transition-colors"
             >
               {isSignUp ? "Sign In" : "Sign Up"}
