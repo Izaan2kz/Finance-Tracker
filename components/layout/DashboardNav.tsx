@@ -17,12 +17,14 @@ import {
   X,
   Settings,
   ChevronDown,
+  Calendar,
 } from "lucide-react";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/transactions", label: "Transactions", icon: ArrowLeftRight },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/insights", label: "Insights", icon: Sparkles },
 ];
 

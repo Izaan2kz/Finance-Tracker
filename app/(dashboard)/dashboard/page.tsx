@@ -11,7 +11,7 @@ import AddTransactionForm from "@/components/transactions/AddTransactionForm";
 import IncomeVsExpense from "@/components/charts/IncomeVsExpense";
 import { formatCurrency } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
-import { Plus, TrendingUp, TrendingDown, Wallet, Target, ArrowRight, Sparkles } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, Wallet, Target, ArrowRight, Sparkles, AlertTriangle, FileText, Calendar } from "lucide-react";
 import Link from "next/link";
 
 interface CategorySpend {
@@ -19,6 +19,22 @@ interface CategorySpend {
   icon: string | null;
   color: string | null;
   total: number;
+}
+
+interface SpendingAlert {
+  category: string;
+  icon: string | null;
+  current: number;
+  previous: number;
+  pctIncrease: number;
+}
+
+interface MonthlySummary {
+  totalTransactions: number;
+  avgDailySpend: number;
+  biggestExpense: { description: string; amount: number } | null;
+  daysLeft: number;
+  dailyBudgetLeft: number | null;
 }
 
 interface DashboardData {
@@ -41,6 +57,8 @@ interface DashboardData {
   }>;
   monthlyData: Array<{ month: string; income: number; expense: number }>;
   topCategories: CategorySpend[];
+  alerts: SpendingAlert[];
+  monthlySummary: MonthlySummary;
 }
 
 function getGreeting(): string {
@@ -86,20 +104,37 @@ export default function DashboardPage() {
       const txData = await txRes.json();
       const recentData = await recentRes.json();
 
-      const allTx: Array<{ type: string; amount: number; category: { name: string; icon: string | null; color: string | null } | null }> = txData.data || [];
+      const allTx: Array<{ type: string; amount: number; description: string; date: string; category: { name: string; icon: string | null; color: string | null } | null }> = txData.data || [];
       let totalIncome = 0;
       let totalExpenses = 0;
+      let biggestExpense: { description: string; amount: number } | null = null;
       const catMap: Record<string, CategorySpend> = {};
       allTx.forEach((t) => {
         if (t.type === "INCOME") totalIncome += t.amount;
         else {
           totalExpenses += t.amount;
+          if (!biggestExpense || t.amount > biggestExpense.amount) {
+            biggestExpense = { description: t.description, amount: t.amount };
+          }
           const name = t.category?.name || "Uncategorized";
           if (!catMap[name]) catMap[name] = { name, icon: t.category?.icon || null, color: t.category?.color || null, total: 0 };
           catMap[name].total += t.amount;
         }
       });
       const topCategories = Object.values(catMap).sort((a, b) => b.total - a.total).slice(0, 5);
+
+      const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      const dayOfMonth = now.getDate();
+      const daysLeft = daysInMonth - dayOfMonth;
+      const avgDailySpend = dayOfMonth > 0 ? totalExpenses / dayOfMonth : 0;
+
+      const monthlySummary: MonthlySummary = {
+        totalTransactions: allTx.length,
+        avgDailySpend,
+        biggestExpense,
+        daysLeft,
+        dailyBudgetLeft: null,
+      };
 
       const months: Record<string, { income: number; expense: number }> = {};
       for (let i = 5; i >= 0; i--) {
@@ -118,8 +153,11 @@ export default function DashboardPage() {
         `/api/transactions?from=${sixMonthsAgo}&to=${lastOfMonth}&pageSize=5000`
       );
       const allData = await allRes.json();
+      const prevCatMap: Record<string, { total: number; icon: string | null }> = {};
+      const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
       (allData.data || []).forEach(
-        (t: { type: string; amount: number; date: string }) => {
+        (t: { type: string; amount: number; date: string; category: { name: string; icon: string | null } | null }) => {
           const d = new Date(t.date);
           const key = d.toLocaleDateString("en-US", {
             month: "short",
@@ -129,8 +167,25 @@ export default function DashboardPage() {
             if (t.type === "INCOME") months[key].income += t.amount;
             else months[key].expense += t.amount;
           }
+          if (t.type === "EXPENSE" && d >= prevMonthStart && d <= prevMonthEnd) {
+            const cn = t.category?.name || "Uncategorized";
+            if (!prevCatMap[cn]) prevCatMap[cn] = { total: 0, icon: t.category?.icon || null };
+            prevCatMap[cn].total += t.amount;
+          }
         }
       );
+
+      const alerts: SpendingAlert[] = [];
+      for (const [name, curr] of Object.entries(catMap)) {
+        const prev = prevCatMap[name];
+        if (prev && prev.total > 0 && curr.total > prev.total) {
+          const pctIncrease = ((curr.total - prev.total) / prev.total) * 100;
+          if (pctIncrease >= 20) {
+            alerts.push({ category: name, icon: curr.icon, current: curr.total, previous: prev.total, pctIncrease });
+          }
+        }
+      }
+      alerts.sort((a, b) => b.pctIncrease - a.pctIncrease);
 
       const monthEntries = Object.entries(months);
       const prevMonth = monthEntries.length >= 2 ? monthEntries[monthEntries.length - 2][1] : { income: 0, expense: 0 };
@@ -151,6 +206,8 @@ export default function DashboardPage() {
           ...vals,
         })),
         topCategories,
+        alerts,
+        monthlySummary,
       });
     } catch {
       // handle error silently
@@ -464,28 +521,146 @@ export default function DashboardPage() {
         </motion.div>
       </div>
 
-      {/* Quick Action */}
-      <motion.div
-        initial={prefersReduced ? {} : { opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.7 }}
-      >
-        <Link
-          href="/insights"
-          className="group flex items-center justify-between rounded-2xl border border-white/[0.06] bg-gradient-to-r from-violet-950/20 via-[#0A1028]/20 to-blue-950/20 p-5 backdrop-blur-xl hover:border-violet-500/20 transition-all duration-300 hover:bg-white/[0.03]"
+      {/* Monthly Summary & Spending Alerts */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 items-stretch">
+        {/* Monthly Summary */}
+        <motion.div
+          initial={prefersReduced ? {} : { opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.65 }}
         >
-          <div className="flex items-center gap-4">
-            <div className="rounded-xl bg-violet-500/10 p-2.5 border border-white/[0.06] group-hover:border-violet-500/20 transition-colors">
-              <Sparkles className="h-5 w-5 text-violet-400" />
+          <Card className="hover:border-blue-500/20 transition-all duration-300 h-full">
+            <div className="flex items-center gap-2.5 mb-5">
+              <div className="rounded-xl bg-blue-500/10 p-2 border border-white/[0.06]">
+                <FileText className="h-4 w-4 text-blue-400" />
+              </div>
+              <h3 className="text-sm font-medium text-slate-300">Monthly Summary</h3>
             </div>
-            <div>
-              <p className="text-sm font-medium text-slate-200">AI Insights</p>
-              <p className="text-xs text-slate-500">Get personalized financial advice powered by Gemini</p>
+            {loading ? (
+              <div className="space-y-3">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
+            ) : (() => {
+              const s = data!.monthlySummary;
+              return (
+                <div className="space-y-3">
+                  {[
+                    { label: "Total Transactions", value: String(s.totalTransactions), sub: "this month" },
+                    { label: "Avg. Daily Spending", value: formatCurrency(s.avgDailySpend), sub: "per day" },
+                    { label: "Biggest Expense", value: s.biggestExpense ? formatCurrency(s.biggestExpense.amount) : "—", sub: s.biggestExpense?.description || "none yet" },
+                    { label: "Days Remaining", value: String(s.daysLeft), sub: `of ${new Date().toLocaleDateString("en-US", { month: "long" })}` },
+                  ].map((item) => (
+                    <div key={item.label} className="flex items-center justify-between rounded-xl bg-white/[0.02] border border-white/[0.04] px-4 py-3">
+                      <div>
+                        <p className="text-xs text-slate-500">{item.label}</p>
+                        <p className="text-sm font-semibold text-slate-100 mt-0.5">{item.value}</p>
+                      </div>
+                      <span className="text-xs text-slate-600">{item.sub}</span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </Card>
+        </motion.div>
+
+        {/* Spending Alerts */}
+        <motion.div
+          initial={prefersReduced ? {} : { opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.7 }}
+        >
+          <Card className="hover:border-amber-500/20 transition-all duration-300 h-full">
+            <div className="flex items-center gap-2.5 mb-5">
+              <div className="rounded-xl bg-amber-500/10 p-2 border border-white/[0.06]">
+                <AlertTriangle className="h-4 w-4 text-amber-400" />
+              </div>
+              <h3 className="text-sm font-medium text-slate-300">Spending Alerts</h3>
             </div>
-          </div>
-          <ArrowRight className="h-4 w-4 text-slate-500 group-hover:text-violet-400 group-hover:translate-x-1 transition-all" />
-        </Link>
-      </motion.div>
+            {loading ? (
+              <div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+            ) : !data?.alerts.length ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="rounded-full bg-emerald-500/10 p-3 mb-3">
+                  <TrendingDown className="h-5 w-5 text-emerald-400" />
+                </div>
+                <p className="text-sm text-slate-400">No spending spikes</p>
+                <p className="text-xs text-slate-600 mt-1">All categories are within normal range vs last month</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {data.alerts.slice(0, 4).map((alert, i) => (
+                  <motion.div
+                    key={alert.category}
+                    initial={prefersReduced ? {} : { opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: 0.75 + i * 0.06 }}
+                    className="flex items-center gap-3 rounded-xl bg-amber-500/5 border border-amber-500/10 px-4 py-3"
+                  >
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-sm shrink-0">
+                      {alert.icon || "📦"}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-slate-200 truncate">{alert.category}</p>
+                      <p className="text-xs text-slate-500">
+                        {formatCurrency(alert.previous)} → {formatCurrency(alert.current)}
+                      </p>
+                    </div>
+                    <span className="text-xs font-semibold text-amber-400 bg-amber-500/10 px-2 py-1 rounded-lg shrink-0">
+                      +{alert.pctIncrease.toFixed(0)}%
+                    </span>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </Card>
+        </motion.div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <motion.div
+          initial={prefersReduced ? {} : { opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.75 }}
+        >
+          <Link
+            href="/insights"
+            className="group flex items-center justify-between rounded-2xl border border-white/[0.06] bg-gradient-to-r from-violet-950/20 via-[#0A1028]/20 to-blue-950/20 p-5 backdrop-blur-xl hover:border-violet-500/20 transition-all duration-300 hover:bg-white/[0.03]"
+          >
+            <div className="flex items-center gap-4">
+              <div className="rounded-xl bg-violet-500/10 p-2.5 border border-white/[0.06] group-hover:border-violet-500/20 transition-colors">
+                <Sparkles className="h-5 w-5 text-violet-400" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-200">AI Insights</p>
+                <p className="text-xs text-slate-500">Get personalized advice</p>
+              </div>
+            </div>
+            <ArrowRight className="h-4 w-4 text-slate-500 group-hover:text-violet-400 group-hover:translate-x-1 transition-all" />
+          </Link>
+        </motion.div>
+
+        <motion.div
+          initial={prefersReduced ? {} : { opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.8 }}
+        >
+          <Link
+            href="/calendar"
+            className="group flex items-center justify-between rounded-2xl border border-white/[0.06] bg-gradient-to-r from-sky-950/20 via-[#0A1028]/20 to-blue-950/20 p-5 backdrop-blur-xl hover:border-sky-500/20 transition-all duration-300 hover:bg-white/[0.03]"
+          >
+            <div className="flex items-center gap-4">
+              <div className="rounded-xl bg-sky-500/10 p-2.5 border border-white/[0.06] group-hover:border-sky-500/20 transition-colors">
+                <Calendar className="h-5 w-5 text-sky-400" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-200">Calendar View</p>
+                <p className="text-xs text-slate-500">See transactions by date</p>
+              </div>
+            </div>
+            <ArrowRight className="h-4 w-4 text-slate-500 group-hover:text-sky-400 group-hover:translate-x-1 transition-all" />
+          </Link>
+        </motion.div>
+      </div>
 
       <Modal
         open={showAddModal}

@@ -8,7 +8,7 @@ import SpendingByCategory from "@/components/charts/SpendingByCategory";
 import IncomeVsExpense from "@/components/charts/IncomeVsExpense";
 import SpendingTrend from "@/components/charts/SpendingTrend";
 import { formatCurrency } from "@/lib/utils";
-import { BarChart3 } from "lucide-react";
+import { BarChart3, TrendingUp, TrendingDown, ArrowRight } from "lucide-react";
 
 interface CategorySummary {
   name: string;
@@ -16,6 +16,13 @@ interface CategorySummary {
   color: string;
   total: number;
   count: number;
+}
+
+interface MonthComparison {
+  label: string;
+  current: number;
+  previous: number;
+  change: number;
 }
 
 export default function AnalyticsPage() {
@@ -40,6 +47,7 @@ export default function AnalyticsPage() {
     []
   );
   const [summaryTable, setSummaryTable] = useState<CategorySummary[]>([]);
+  const [monthComparison, setMonthComparison] = useState<MonthComparison[]>([]);
 
   const fetchAnalytics = useCallback(async () => {
     setLoading(true);
@@ -126,13 +134,25 @@ export default function AnalyticsPage() {
           count,
         }))
       );
+      const monthEntries = Object.entries(monthMap);
       setMonthlyData(
-        Object.entries(monthMap).map(([month, v]) => ({
+        monthEntries.map(([month, v]) => ({
           month,
           income: v.income,
           expense: v.expense,
         }))
       );
+
+      if (monthEntries.length >= 2) {
+        const curr = monthEntries[monthEntries.length - 1][1];
+        const prev = monthEntries[monthEntries.length - 2][1];
+        const pct = (c: number, p: number) => p === 0 ? (c > 0 ? 100 : 0) : ((c - p) / p) * 100;
+        setMonthComparison([
+          { label: "Income", current: curr.income, previous: prev.income, change: pct(curr.income, prev.income) },
+          { label: "Expenses", current: curr.expense, previous: prev.expense, change: pct(curr.expense, prev.expense) },
+          { label: "Net", current: curr.income - curr.expense, previous: prev.income - prev.expense, change: pct(curr.income - curr.expense, prev.income - prev.expense) },
+        ]);
+      }
       setDailyData(
         Object.entries(dailyMap).map(([date, amount]) => ({ date, amount }))
       );
@@ -179,8 +199,45 @@ export default function AnalyticsPage() {
         </div>
       </motion.div>
 
+      {/* Month-over-Month Comparison */}
+      {monthComparison.length > 0 && (
+        <motion.div initial={prefersReduced ? {} : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {monthComparison.map((item, i) => {
+              const isGood = item.label === "Expenses" ? item.change <= 0 : item.change >= 0;
+              return (
+                <motion.div
+                  key={item.label}
+                  initial={prefersReduced ? {} : { opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.15 + i * 0.08 }}
+                >
+                  <Card className="hover:border-white/10 transition-all duration-300">
+                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">{item.label}</p>
+                    <div className="flex items-end justify-between">
+                      <div>
+                        <p className="text-xl font-bold text-slate-100 font-[family-name:var(--font-heading)]">{formatCurrency(item.current)}</p>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <span className="text-xs text-slate-500">{formatCurrency(item.previous)}</span>
+                          <ArrowRight className="h-3 w-3 text-slate-600" />
+                          <span className="text-xs text-slate-400">{formatCurrency(item.current)}</span>
+                        </div>
+                      </div>
+                      <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold ${isGood ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"}`}>
+                        {isGood ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                        {item.change >= 0 ? "+" : ""}{item.change.toFixed(1)}%
+                      </div>
+                    </div>
+                  </Card>
+                </motion.div>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 items-stretch">
-        <motion.div initial={prefersReduced ? {} : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.15 }}>
+        <motion.div initial={prefersReduced ? {} : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.25 }}>
           <Card className="hover:border-red-500/20 transition-all duration-300 h-full">
             <h3 className="text-sm font-medium text-slate-300 mb-4">Spending by Category</h3>
             <SpendingByCategory data={categoryData} loading={loading} />

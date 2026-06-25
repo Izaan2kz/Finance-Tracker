@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
   const categoryId = searchParams.get("categoryId");
   const from = searchParams.get("from");
   const to = searchParams.get("to");
+  const search = searchParams.get("search");
 
   let query = supabase
     .from("transactions")
@@ -27,6 +28,7 @@ export async function GET(request: NextRequest) {
   if (categoryId) query = query.eq("category_id", categoryId);
   if (from) query = query.gte("date", from);
   if (to) query = query.lte("date", to);
+  if (search) query = query.ilike("description", `%${search}%`);
 
   const { data: transactions, count, error } = await query;
 

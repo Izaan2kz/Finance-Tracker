@@ -10,7 +10,7 @@ import Input from "@/components/ui/Input";
 import TransactionList from "@/components/transactions/TransactionList";
 import AddTransactionForm from "@/components/transactions/AddTransactionForm";
 import { useToast } from "@/components/ui/Toast";
-import { Plus, ChevronLeft, ChevronRight, ArrowLeftRight } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, ArrowLeftRight, Search, Calendar } from "lucide-react";
 
 interface Transaction {
   id: string;
@@ -43,6 +43,13 @@ export default function TransactionsPage() {
   const [filterCategory, setFilterCategory] = useState("");
   const [filterFrom, setFilterFrom] = useState("");
   const [filterTo, setFilterTo] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchDebounce, setSearchDebounce] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => setSearchDebounce(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const fetchTransactions = useCallback(async () => {
     setLoading(true);
@@ -52,6 +59,7 @@ export default function TransactionsPage() {
       if (filterCategory) params.set("categoryId", filterCategory);
       if (filterFrom) params.set("from", filterFrom);
       if (filterTo) params.set("to", filterTo);
+      if (searchDebounce) params.set("search", searchDebounce);
 
       const res = await fetch(`/api/transactions?${params}`);
       const data = await res.json();
@@ -62,7 +70,27 @@ export default function TransactionsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, filterType, filterCategory, filterFrom, filterTo, toast]);
+  }, [page, filterType, filterCategory, filterFrom, filterTo, searchDebounce, toast]);
+
+  const setQuickRange = (range: string) => {
+    const now = new Date();
+    let f: Date;
+    const t = now;
+    switch (range) {
+      case "week": f = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7); break;
+      case "month": f = new Date(now.getFullYear(), now.getMonth(), 1); break;
+      case "30d": f = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30); break;
+      case "90d": f = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 90); break;
+      default: f = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+    setFilterFrom(f.toISOString().split("T")[0]);
+    setFilterTo(t.toISOString().split("T")[0]);
+    setPage(1);
+  };
+
+  const clearFilters = () => {
+    setFilterType(""); setFilterCategory(""); setFilterFrom(""); setFilterTo(""); setSearchQuery(""); setPage(1);
+  };
 
   useEffect(() => {
     fetch("/api/categories")
@@ -145,6 +173,42 @@ export default function TransactionsPage() {
         transition={{ duration: 0.4, delay: 0.15 }}
       >
         <Card className="hover:border-sky-500/20 transition-all duration-300">
+          {/* Search */}
+          <div className="relative mb-4">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+            <input
+              type="text"
+              placeholder="Search transactions..."
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+              className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] pl-10 pr-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/30 focus:bg-white/[0.06]"
+            />
+          </div>
+
+          {/* Quick date filters */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {[
+              { label: "This Week", value: "week" },
+              { label: "This Month", value: "month" },
+              { label: "Last 30 Days", value: "30d" },
+              { label: "Last 90 Days", value: "90d" },
+            ].map((q) => (
+              <button
+                key={q.value}
+                onClick={() => setQuickRange(q.value)}
+                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-400 bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] hover:text-slate-200 transition-all cursor-pointer"
+              >
+                <Calendar className="h-3 w-3" />
+                {q.label}
+              </button>
+            ))}
+            {(filterFrom || filterTo || filterType || filterCategory || searchQuery) && (
+              <button onClick={clearFilters} className="rounded-lg px-3 py-1.5 text-xs font-medium text-red-400 bg-red-500/10 border border-red-500/20 hover:bg-red-500/15 transition-all cursor-pointer">
+                Clear all
+              </button>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
             <Select
               id="filterType"
