@@ -10,7 +10,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { formatCurrency } from "@/lib/utils";
+import { useCurrency } from "@/lib/currency";
 import Skeleton from "@/components/ui/Skeleton";
 
 interface MonthlyData {
@@ -25,6 +25,7 @@ interface IncomeVsExpenseProps {
 }
 
 export default function IncomeVsExpense({ data, loading }: IncomeVsExpenseProps) {
+  const { formatAmount: formatCurrency } = useCurrency();
   if (loading) {
     return <Skeleton className="h-64 w-full" />;
   }

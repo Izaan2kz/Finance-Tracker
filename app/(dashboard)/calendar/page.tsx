@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import Card from "@/components/ui/Card";
 import Skeleton from "@/components/ui/Skeleton";
-import { formatCurrency } from "@/lib/utils";
+import { useCurrency } from "@/lib/currency";
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Transaction {
@@ -29,6 +29,7 @@ export default function CalendarPage() {
   const [days, setDays] = useState<(DayData | null)[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState<DayData | null>(null);
+  const { formatAmount: formatCurrency } = useCurrency();
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();

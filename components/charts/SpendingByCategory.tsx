@@ -1,7 +1,7 @@
 "use client";
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { formatCurrency } from "@/lib/utils";
+import { useCurrency } from "@/lib/currency";
 import Skeleton from "@/components/ui/Skeleton";
 
 interface CategoryData {
@@ -17,6 +17,7 @@ interface SpendingByCategoryProps {
 }
 
 export default function SpendingByCategory({ data, loading }: SpendingByCategoryProps) {
+  const { formatAmount: formatCurrency } = useCurrency();
   if (loading) {
     return (
       <div className="flex items-center gap-8">

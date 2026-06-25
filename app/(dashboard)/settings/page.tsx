@@ -7,22 +7,27 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { createClient } from "@/lib/supabase";
 import { useToast } from "@/components/ui/Toast";
-import { Settings, User, DollarSign, Shield, Trash2 } from "lucide-react";
+import { Settings, User, DollarSign, Shield, Trash2, Globe, Info } from "lucide-react";
+import Link from "next/link";
+import { useCurrency, currencies } from "@/lib/currency";
 
 interface UserProfile {
   name: string;
   email: string;
+  occupation: string;
   monthlyBudget: string;
 }
 
 export default function SettingsPage() {
   const prefersReduced = useReducedMotion();
   const { toast } = useToast();
-  const [profile, setProfile] = useState<UserProfile>({ name: "", email: "", monthlyBudget: "" });
+  const [profile, setProfile] = useState<UserProfile>({ name: "", email: "", occupation: "", monthlyBudget: "" });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [passwordData, setPasswordData] = useState({ current: "", newPass: "", confirm: "" });
   const [changingPassword, setChangingPassword] = useState(false);
+  const { currency, setCurrency, getCurrencyInfo } = useCurrency();
+  const [currencySearch, setCurrencySearch] = useState("");
 
   useEffect(() => {
     const supabase = createClient();
@@ -31,6 +36,7 @@ export default function SettingsPage() {
         setProfile({
           name: user.user_metadata?.full_name || "",
           email: user.email || "",
+          occupation: user.user_metadata?.occupation || "",
           monthlyBudget: "",
         });
 
@@ -54,7 +60,7 @@ export default function SettingsPage() {
     try {
       const supabase = createClient();
       const { error: authError } = await supabase.auth.updateUser({
-        data: { full_name: profile.name.trim() },
+        data: { full_name: profile.name.trim(), occupation: profile.occupation.trim() || null },
       });
       if (authError) throw authError;
 
@@ -118,6 +124,7 @@ export default function SettingsPage() {
         <div className="space-y-4">
           <Input id="name" label="Full Name" value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} placeholder="Your name" />
           <Input id="email" label="Email" value={profile.email} disabled className="opacity-60 cursor-not-allowed" />
+          <Input id="occupation" label="Occupation" value={profile.occupation} onChange={(e) => setProfile({ ...profile, occupation: e.target.value })} placeholder="e.g. Software Engineer, Student, Freelancer" />
           <div className="pt-2">
             <Button onClick={handleSaveProfile} disabled={saving}>
               {saving ? "Saving..." : "Save Changes"}
@@ -125,6 +132,56 @@ export default function SettingsPage() {
           </div>
         </div>
       ),
+    },
+    {
+      icon: Globe,
+      title: "Currency",
+      color: "sky",
+      gradient: "from-sky-950/30",
+      content: (() => {
+        const filtered = currencies.filter((c) =>
+          currencySearch ? c.name.toLowerCase().includes(currencySearch.toLowerCase()) || c.code.toLowerCase().includes(currencySearch.toLowerCase()) : true
+        );
+        const info = getCurrencyInfo();
+        return (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 rounded-xl bg-white/[0.03] border border-white/[0.06] px-4 py-3">
+              <span className="text-lg">{info.symbol}</span>
+              <div>
+                <p className="text-sm font-medium text-slate-200">{info.name}</p>
+                <p className="text-xs text-slate-500">{info.code}</p>
+              </div>
+            </div>
+            <input
+              type="text"
+              placeholder="Search currencies..."
+              value={currencySearch}
+              onChange={(e) => setCurrencySearch(e.target.value)}
+              className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/30"
+            />
+            <div className="max-h-48 overflow-y-auto space-y-1 rounded-xl border border-white/[0.06] bg-white/[0.02] p-2">
+              {filtered.map((c) => (
+                <button
+                  key={c.code}
+                  onClick={() => { setCurrency(c.code); setCurrencySearch(""); toast(`Currency set to ${c.name}`, "success"); }}
+                  className={`w-full flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all cursor-pointer ${
+                    currency === c.code
+                      ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                      : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200 border border-transparent"
+                  }`}
+                >
+                  <span className="w-8 text-center text-base">{c.symbol}</span>
+                  <span className="flex-1 text-left">{c.name}</span>
+                  <span className="text-xs text-slate-600">{c.code}</span>
+                </button>
+              ))}
+              {filtered.length === 0 && (
+                <p className="text-xs text-slate-500 text-center py-3">No currencies found</p>
+              )}
+            </div>
+          </div>
+        );
+      })(),
     },
     {
       icon: DollarSign,
@@ -136,9 +193,12 @@ export default function SettingsPage() {
           <Input
             id="budget"
             label="Monthly Budget"
-            type="number"
+            inputMode="decimal"
             value={profile.monthlyBudget}
-            onChange={(e) => setProfile({ ...profile, monthlyBudget: e.target.value })}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === "" || /^\d*\.?\d*$/.test(v)) setProfile({ ...profile, monthlyBudget: v });
+            }}
             placeholder="e.g. 5000"
           />
           <p className="text-xs text-slate-500">Set a monthly budget to track your spending against a target. Leave empty to disable.</p>
@@ -168,13 +228,50 @@ export default function SettingsPage() {
       ),
     },
     {
+      icon: Info,
+      title: "App Info",
+      color: "violet",
+      gradient: "from-violet-950/30",
+      content: (
+        <div className="space-y-4">
+          <div className="space-y-2.5">
+            {[
+              { label: "App", value: "Financer" },
+              { label: "Framework", value: "Next.js 16" },
+              { label: "Database", value: "Supabase" },
+              { label: "AI Engine", value: "Google Gemini" },
+            ].map((item) => (
+              <div key={item.label} className="flex items-center justify-between rounded-lg bg-white/[0.02] border border-white/[0.04] px-3 py-2">
+                <span className="text-xs text-slate-500">{item.label}</span>
+                <span className="text-xs font-medium text-slate-300">{item.value}</span>
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2 pt-1">
+            <Link href="/about" className="text-xs text-blue-400 hover:text-blue-300 transition-colors bg-blue-500/10 px-2.5 py-1 rounded-lg border border-blue-500/20">About</Link>
+            <Link href="/terms" className="text-xs text-slate-400 hover:text-slate-300 transition-colors bg-white/[0.04] px-2.5 py-1 rounded-lg border border-white/[0.06]">Terms</Link>
+            <Link href="/privacy" className="text-xs text-slate-400 hover:text-slate-300 transition-colors bg-white/[0.04] px-2.5 py-1 rounded-lg border border-white/[0.06]">Privacy</Link>
+          </div>
+        </div>
+      ),
+    },
+    {
       icon: Trash2,
       title: "Danger Zone",
       color: "red",
       gradient: "from-red-950/30",
       content: (
         <div className="space-y-4">
-          <p className="text-sm text-slate-400">Permanently delete your account and all associated data. This cannot be undone.</p>
+          <div className="rounded-xl bg-red-500/5 border border-red-500/10 px-4 py-3 space-y-2">
+            <p className="text-sm font-medium text-red-400">What happens when you delete:</p>
+            {["All transactions permanently erased", "Analytics & insights history removed", "Categories and budget settings deleted", "Account credentials wiped from servers"].map((item) => (
+              <div key={item} className="flex items-center gap-2.5 text-xs text-slate-500">
+                <span className="h-1.5 w-1.5 rounded-full bg-red-400/50 shrink-0" />
+                {item}
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-slate-600">This action is irreversible. Please be certain.</p>
           <Button variant="danger" onClick={handleDeleteAccount}>
             Delete Account
           </Button>
@@ -185,8 +282,10 @@ export default function SettingsPage() {
 
   const colorMap: Record<string, { iconBg: string; iconText: string; border: string }> = {
     blue: { iconBg: "bg-blue-500/10", iconText: "text-blue-400", border: "hover:border-blue-500/20" },
+    sky: { iconBg: "bg-sky-500/10", iconText: "text-sky-400", border: "hover:border-sky-500/20" },
     emerald: { iconBg: "bg-emerald-500/10", iconText: "text-emerald-400", border: "hover:border-emerald-500/20" },
     amber: { iconBg: "bg-amber-500/10", iconText: "text-amber-400", border: "hover:border-amber-500/20" },
+    violet: { iconBg: "bg-violet-500/10", iconText: "text-violet-400", border: "hover:border-violet-500/20" },
     red: { iconBg: "bg-red-500/10", iconText: "text-red-400", border: "hover:border-red-500/20" },
   };
 

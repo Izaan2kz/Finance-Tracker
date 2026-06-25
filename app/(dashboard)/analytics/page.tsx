@@ -7,7 +7,7 @@ import Input from "@/components/ui/Input";
 import SpendingByCategory from "@/components/charts/SpendingByCategory";
 import IncomeVsExpense from "@/components/charts/IncomeVsExpense";
 import SpendingTrend from "@/components/charts/SpendingTrend";
-import { formatCurrency } from "@/lib/utils";
+import { useCurrency } from "@/lib/currency";
 import { BarChart3, TrendingUp, TrendingDown, ArrowRight } from "lucide-react";
 
 interface CategorySummary {
@@ -48,6 +48,7 @@ export default function AnalyticsPage() {
   );
   const [summaryTable, setSummaryTable] = useState<CategorySummary[]>([]);
   const [monthComparison, setMonthComparison] = useState<MonthComparison[]>([]);
+  const { formatAmount: formatCurrency } = useCurrency();
 
   const fetchAnalytics = useCallback(async () => {
     setLoading(true);

@@ -9,7 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { formatCurrency } from "@/lib/utils";
+import { useCurrency } from "@/lib/currency";
 import Skeleton from "@/components/ui/Skeleton";
 
 interface DailyData {
@@ -23,6 +23,7 @@ interface SpendingTrendProps {
 }
 
 export default function SpendingTrend({ data, loading }: SpendingTrendProps) {
+  const { formatAmount: formatCurrency } = useCurrency();
   if (loading) {
     return <Skeleton className="h-64 w-full" />;
   }

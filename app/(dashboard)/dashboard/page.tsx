@@ -9,7 +9,7 @@ import Skeleton from "@/components/ui/Skeleton";
 import TransactionList from "@/components/transactions/TransactionList";
 import AddTransactionForm from "@/components/transactions/AddTransactionForm";
 import IncomeVsExpense from "@/components/charts/IncomeVsExpense";
-import { formatCurrency } from "@/lib/utils";
+import { useCurrency } from "@/lib/currency";
 import { createClient } from "@/lib/supabase";
 import { Plus, TrendingUp, TrendingDown, Wallet, Target, ArrowRight, Sparkles, AlertTriangle, FileText, Calendar } from "lucide-react";
 import Link from "next/link";
@@ -74,6 +74,7 @@ export default function DashboardPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
   const prefersReduced = useReducedMotion();
+  const { formatAmount: formatCurrency } = useCurrency();
 
   useEffect(() => {
     const supabase = createClient();

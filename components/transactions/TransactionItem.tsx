@@ -1,7 +1,8 @@
 "use client";
 
 import Badge from "@/components/ui/Badge";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
+import { useCurrency } from "@/lib/currency";
 import { Pencil, Trash2 } from "lucide-react";
 
 interface TransactionItemProps {
@@ -28,6 +29,7 @@ export default function TransactionItem({
   onDelete,
   compact,
 }: TransactionItemProps) {
+  const { formatAmount: formatCurrency } = useCurrency();
   const amount = typeof transaction.amount === "string"
     ? parseFloat(transaction.amount)
     : transaction.amount;
