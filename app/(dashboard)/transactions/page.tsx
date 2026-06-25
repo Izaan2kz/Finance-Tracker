@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
@@ -9,7 +10,7 @@ import Input from "@/components/ui/Input";
 import TransactionList from "@/components/transactions/TransactionList";
 import AddTransactionForm from "@/components/transactions/AddTransactionForm";
 import { useToast } from "@/components/ui/Toast";
-import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, ArrowLeftRight } from "lucide-react";
 
 interface Transaction {
   id: string;
@@ -65,8 +66,8 @@ export default function TransactionsPage() {
 
   useEffect(() => {
     fetch("/api/categories")
-      .then((r) => r.json())
-      .then(setCategories)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => setCategories(Array.isArray(data) ? data : []))
       .catch(() => {});
   }, []);
 
@@ -108,94 +109,115 @@ export default function TransactionsPage() {
     })),
   ];
 
+  const prefersReduced = useReducedMotion();
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-zinc-100">Transactions</h1>
-          <p className="text-sm text-zinc-500 mt-1">
-            Manage your income and expenses
-          </p>
+      <motion.div
+        initial={prefersReduced ? {} : { opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-gradient-to-br from-sky-950/40 via-[#0A1028]/30 to-[#0A1028]/20 p-6 lg:p-8 backdrop-blur-xl"
+      >
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-20 -right-20 w-[250px] h-[250px] rounded-full bg-sky-600/10 blur-[80px]" />
         </div>
-        <Button onClick={() => setShowAddModal(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Transaction
-        </Button>
-      </div>
-
-      <Card>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-          <Select
-            id="filterType"
-            value={filterType}
-            onChange={(e) => {
-              setFilterType(e.target.value);
-              setPage(1);
-            }}
-            options={typeOptions}
-          />
-          <Select
-            id="filterCategory"
-            value={filterCategory}
-            onChange={(e) => {
-              setFilterCategory(e.target.value);
-              setPage(1);
-            }}
-            options={categoryOptions}
-          />
-          <Input
-            id="filterFrom"
-            type="date"
-            placeholder="From"
-            value={filterFrom}
-            onChange={(e) => {
-              setFilterFrom(e.target.value);
-              setPage(1);
-            }}
-          />
-          <Input
-            id="filterTo"
-            type="date"
-            placeholder="To"
-            value={filterTo}
-            onChange={(e) => {
-              setFilterTo(e.target.value);
-              setPage(1);
-            }}
-          />
-        </div>
-
-        <TransactionList
-          transactions={transactions}
-          loading={loading}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
-
-        {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-4 mt-6 pt-4 border-t border-zinc-800">
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-sm text-zinc-400">
-              Page {page} of {totalPages}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={page >= totalPages}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="rounded-xl bg-sky-500/10 p-3 border border-white/[0.06]">
+              <ArrowLeftRight className="h-6 w-6 text-sky-400" />
+            </div>
+            <div>
+              <h1 className="text-2xl lg:text-3xl font-bold text-slate-100 font-[family-name:var(--font-heading)] tracking-tight">Transactions</h1>
+              <p className="text-sm text-slate-400 mt-0.5">Manage your income and expenses</p>
+            </div>
           </div>
-        )}
-      </Card>
+          <Button onClick={() => setShowAddModal(true)} className="shadow-lg shadow-blue-600/20">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Transaction
+          </Button>
+        </div>
+      </motion.div>
+
+      <motion.div
+        initial={prefersReduced ? {} : { opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.15 }}
+      >
+        <Card className="hover:border-sky-500/20 transition-all duration-300">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+            <Select
+              id="filterType"
+              value={filterType}
+              onChange={(e) => {
+                setFilterType(e.target.value);
+                setPage(1);
+              }}
+              options={typeOptions}
+            />
+            <Select
+              id="filterCategory"
+              value={filterCategory}
+              onChange={(e) => {
+                setFilterCategory(e.target.value);
+                setPage(1);
+              }}
+              options={categoryOptions}
+            />
+            <Input
+              id="filterFrom"
+              type="date"
+              placeholder="From"
+              value={filterFrom}
+              onChange={(e) => {
+                setFilterFrom(e.target.value);
+                setPage(1);
+              }}
+            />
+            <Input
+              id="filterTo"
+              type="date"
+              placeholder="To"
+              value={filterTo}
+              onChange={(e) => {
+                setFilterTo(e.target.value);
+                setPage(1);
+              }}
+            />
+          </div>
+
+          <TransactionList
+            transactions={transactions}
+            loading={loading}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-4 mt-6 pt-4 border-t border-white/[0.04]">
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm text-slate-400 bg-white/[0.04] px-3 py-1 rounded-lg border border-white/[0.06]">
+                Page {page} of {totalPages}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </Card>
+      </motion.div>
 
       <Modal
         open={showAddModal}

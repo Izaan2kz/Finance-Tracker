@@ -33,17 +33,17 @@ export default function TransactionItem({
     : transaction.amount;
 
   return (
-    <div className="flex items-center gap-4 rounded-xl px-4 py-3 transition-colors hover:bg-zinc-800/30 group">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-800 text-lg">
+    <div className="flex items-center gap-4 rounded-xl px-4 py-3 transition-colors hover:bg-white/[0.03] group">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.04] border border-white/[0.06] text-lg">
         {transaction.category?.icon || (transaction.type === "INCOME" ? "💵" : "💸")}
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-zinc-100 truncate">
+        <p className="text-sm font-medium text-slate-100 truncate">
           {transaction.description}
         </p>
         <div className="flex items-center gap-2 mt-0.5">
-          <span className="text-xs text-zinc-500">
+          <span className="text-xs text-slate-500">
             {formatDate(transaction.date)}
           </span>
           {transaction.category && (
@@ -69,7 +69,7 @@ export default function TransactionItem({
             {onEdit && (
               <button
                 onClick={() => onEdit(transaction.id)}
-                className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-700 hover:text-zinc-300 transition-colors cursor-pointer"
+                className="rounded-lg p-1.5 text-slate-500 hover:bg-white/[0.06] hover:text-slate-300 transition-colors cursor-pointer"
               >
                 <Pencil className="h-4 w-4" />
               </button>
@@ -77,7 +77,7 @@ export default function TransactionItem({
             {onDelete && (
               <button
                 onClick={() => onDelete(transaction.id)}
-                className="rounded-lg p-1.5 text-zinc-500 hover:bg-red-900/50 hover:text-red-400 transition-colors cursor-pointer"
+                className="rounded-lg p-1.5 text-slate-500 hover:bg-red-500/10 hover:text-red-400 transition-colors cursor-pointer"
               >
                 <Trash2 className="h-4 w-4" />
               </button>

@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import Card from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
 import SpendingByCategory from "@/components/charts/SpendingByCategory";
 import IncomeVsExpense from "@/components/charts/IncomeVsExpense";
 import SpendingTrend from "@/components/charts/SpendingTrend";
 import { formatCurrency } from "@/lib/utils";
+import { BarChart3 } from "lucide-react";
 
 interface CategorySummary {
   name: string;
@@ -147,108 +149,97 @@ export default function AnalyticsPage() {
 
   const totalSpending = summaryTable.reduce((s, c) => s + c.total, 0);
 
+  const prefersReduced = useReducedMotion();
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-zinc-100">Analytics</h1>
-        <p className="text-sm text-zinc-500 mt-1">
-          Visual breakdown of your finances
-        </p>
-      </div>
-
-      <div className="flex gap-4 items-end">
-        <Input
-          id="from"
-          label="From"
-          type="date"
-          value={from}
-          onChange={(e) => setFrom(e.target.value)}
-        />
-        <Input
-          id="to"
-          label="To"
-          type="date"
-          value={to}
-          onChange={(e) => setTo(e.target.value)}
-        />
-      </div>
+      <motion.div
+        initial={prefersReduced ? {} : { opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-gradient-to-br from-red-950/30 via-[#0A1028]/30 to-[#0A1028]/20 p-6 lg:p-8 backdrop-blur-xl"
+      >
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-20 -right-20 w-[250px] h-[250px] rounded-full bg-red-600/8 blur-[80px]" />
+        </div>
+        <div className="relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="rounded-xl bg-red-500/10 p-3 border border-white/[0.06]">
+              <BarChart3 className="h-6 w-6 text-red-400" />
+            </div>
+            <div>
+              <h1 className="text-2xl lg:text-3xl font-bold text-slate-100 font-[family-name:var(--font-heading)] tracking-tight">Analytics</h1>
+              <p className="text-sm text-slate-400 mt-0.5">Visual breakdown of your finances</p>
+            </div>
+          </div>
+          <div className="flex gap-3 items-end">
+            <Input id="from" label="From" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+            <Input id="to" label="To" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+          </div>
+        </div>
+      </motion.div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card>
-          <h3 className="text-sm font-medium text-zinc-300 mb-4">
-            Spending by Category
-          </h3>
-          <SpendingByCategory data={categoryData} loading={loading} />
-        </Card>
+        <motion.div initial={prefersReduced ? {} : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.15 }}>
+          <Card className="hover:border-red-500/20 transition-all duration-300">
+            <h3 className="text-sm font-medium text-slate-300 mb-4">Spending by Category</h3>
+            <SpendingByCategory data={categoryData} loading={loading} />
+          </Card>
+        </motion.div>
 
-        <Card>
-          <h3 className="text-sm font-medium text-zinc-300 mb-4">
-            Income vs Expenses
-          </h3>
-          <IncomeVsExpense data={monthlyData} loading={loading} />
-        </Card>
+        <motion.div initial={prefersReduced ? {} : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.25 }}>
+          <Card className="hover:border-blue-500/20 transition-all duration-300">
+            <h3 className="text-sm font-medium text-slate-300 mb-4">Income vs Expenses</h3>
+            <IncomeVsExpense data={monthlyData} loading={loading} />
+          </Card>
+        </motion.div>
       </div>
 
-      <Card>
-        <h3 className="text-sm font-medium text-zinc-300 mb-4">Spending Trend</h3>
-        <SpendingTrend data={dailyData} loading={loading} />
-      </Card>
+      <motion.div initial={prefersReduced ? {} : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.35 }}>
+        <Card className="hover:border-indigo-500/20 transition-all duration-300">
+          <h3 className="text-sm font-medium text-slate-300 mb-4">Spending Trend</h3>
+          <SpendingTrend data={dailyData} loading={loading} />
+        </Card>
+      </motion.div>
 
-      <Card>
-        <h3 className="text-sm font-medium text-zinc-300 mb-4">
-          Category Breakdown
-        </h3>
-        {summaryTable.length === 0 ? (
-          <p className="text-sm text-zinc-500 text-center py-8">
-            No expense data for this period
-          </p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-zinc-800 text-zinc-400">
-                  <th className="text-left py-3 px-2 font-medium">Category</th>
-                  <th className="text-right py-3 px-2 font-medium">Total</th>
-                  <th className="text-right py-3 px-2 font-medium">% of Total</th>
-                  <th className="text-right py-3 px-2 font-medium">Count</th>
-                </tr>
-              </thead>
-              <tbody>
-                {summaryTable.map((cat) => (
-                  <tr
-                    key={cat.name}
-                    className="border-b border-zinc-800/50 hover:bg-zinc-800/20"
-                  >
-                    <td className="py-3 px-2">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="h-3 w-3 rounded-full"
-                          style={{ backgroundColor: cat.color }}
-                        />
-                        <span className="text-zinc-200">
-                          {cat.icon} {cat.name}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-2 text-right text-zinc-100 font-medium tabular-nums">
-                      {formatCurrency(cat.total)}
-                    </td>
-                    <td className="py-3 px-2 text-right text-zinc-400 tabular-nums">
-                      {totalSpending > 0
-                        ? ((cat.total / totalSpending) * 100).toFixed(1)
-                        : 0}
-                      %
-                    </td>
-                    <td className="py-3 px-2 text-right text-zinc-400 tabular-nums">
-                      {cat.count}
-                    </td>
+      <motion.div initial={prefersReduced ? {} : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.45 }}>
+        <Card className="hover:border-white/10 transition-all duration-300">
+          <h3 className="text-sm font-medium text-slate-300 mb-4">Category Breakdown</h3>
+          {summaryTable.length === 0 ? (
+            <p className="text-sm text-slate-500 text-center py-8">No expense data for this period</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/[0.06] text-slate-400">
+                    <th className="text-left py-3 px-2 font-medium">Category</th>
+                    <th className="text-right py-3 px-2 font-medium">Total</th>
+                    <th className="text-right py-3 px-2 font-medium">% of Total</th>
+                    <th className="text-right py-3 px-2 font-medium">Count</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+                </thead>
+                <tbody>
+                  {summaryTable.map((cat) => (
+                    <tr key={cat.name} className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors">
+                      <td className="py-3 px-2">
+                        <div className="flex items-center gap-2">
+                          <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
+                          <span className="text-slate-200">{cat.icon} {cat.name}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-2 text-right text-slate-100 font-medium tabular-nums">{formatCurrency(cat.total)}</td>
+                      <td className="py-3 px-2 text-right text-slate-400 tabular-nums">
+                        {totalSpending > 0 ? ((cat.total / totalSpending) * 100).toFixed(1) : 0}%
+                      </td>
+                      <td className="py-3 px-2 text-right text-slate-400 tabular-nums">{cat.count}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      </motion.div>
     </div>
   );
 }

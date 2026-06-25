@@ -64,9 +64,9 @@ export default function SpendingByCategory({ data, loading }: SpendingByCategory
                 if (!payload?.length) return null;
                 const item = payload[0].payload as CategoryData;
                 return (
-                  <div className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 shadow-lg">
-                    <p className="text-xs text-zinc-400">{item.icon} {item.name}</p>
-                    <p className="text-sm font-semibold text-zinc-100">
+                  <div className="rounded-xl border border-white/[0.08] bg-[#0A1028]/95 backdrop-blur-xl px-4 py-3 shadow-2xl shadow-black/50">
+                    <p className="text-xs text-slate-400">{item.icon} {item.name}</p>
+                    <p className="text-sm font-semibold text-slate-100">
                       {formatCurrency(item.value)}
                     </p>
                   </div>

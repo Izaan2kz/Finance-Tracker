@@ -63,7 +63,7 @@ export default function TransactionList({
   }
 
   return (
-    <div className="divide-y divide-zinc-800/50">
+    <div className="divide-y divide-white/[0.04]">
       {transactions.map((t) => (
         <TransactionItem
           key={t.id}
