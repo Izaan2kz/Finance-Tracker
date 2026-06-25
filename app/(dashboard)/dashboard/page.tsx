@@ -14,6 +14,13 @@ import { createClient } from "@/lib/supabase";
 import { Plus, TrendingUp, TrendingDown, Wallet, Target, ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 
+interface CategorySpend {
+  name: string;
+  icon: string | null;
+  color: string | null;
+  total: number;
+}
+
 interface DashboardData {
   summary: {
     totalIncome: number;
@@ -21,6 +28,8 @@ interface DashboardData {
     netBalance: number;
     monthlyBudget: number | null;
     budgetRemaining: number | null;
+    prevIncome: number;
+    prevExpenses: number;
   };
   recentTransactions: Array<{
     id: string;
@@ -31,6 +40,7 @@ interface DashboardData {
     category: { name: string; icon: string | null; color: string | null } | null;
   }>;
   monthlyData: Array<{ month: string; income: number; expense: number }>;
+  topCategories: CategorySpend[];
 }
 
 function getGreeting(): string {
@@ -76,15 +86,20 @@ export default function DashboardPage() {
       const txData = await txRes.json();
       const recentData = await recentRes.json();
 
-      const allTx = txData.data || [];
+      const allTx: Array<{ type: string; amount: number; category: { name: string; icon: string | null; color: string | null } | null }> = txData.data || [];
       let totalIncome = 0;
       let totalExpenses = 0;
-      allTx.forEach(
-        (t: { type: string; amount: number }) => {
-          if (t.type === "INCOME") totalIncome += t.amount;
-          else totalExpenses += t.amount;
+      const catMap: Record<string, CategorySpend> = {};
+      allTx.forEach((t) => {
+        if (t.type === "INCOME") totalIncome += t.amount;
+        else {
+          totalExpenses += t.amount;
+          const name = t.category?.name || "Uncategorized";
+          if (!catMap[name]) catMap[name] = { name, icon: t.category?.icon || null, color: t.category?.color || null, total: 0 };
+          catMap[name].total += t.amount;
         }
-      );
+      });
+      const topCategories = Object.values(catMap).sort((a, b) => b.total - a.total).slice(0, 5);
 
       const months: Record<string, { income: number; expense: number }> = {};
       for (let i = 5; i >= 0; i--) {
@@ -117,6 +132,9 @@ export default function DashboardPage() {
         }
       );
 
+      const monthEntries = Object.entries(months);
+      const prevMonth = monthEntries.length >= 2 ? monthEntries[monthEntries.length - 2][1] : { income: 0, expense: 0 };
+
       setData({
         summary: {
           totalIncome,
@@ -124,12 +142,15 @@ export default function DashboardPage() {
           netBalance: totalIncome - totalExpenses,
           monthlyBudget: null,
           budgetRemaining: null,
+          prevIncome: prevMonth.income,
+          prevExpenses: prevMonth.expense,
         },
         recentTransactions: recentData.data || [],
-        monthlyData: Object.entries(months).map(([month, vals]) => ({
+        monthlyData: monthEntries.map(([month, vals]) => ({
           month,
           ...vals,
         })),
+        topCategories,
       });
     } catch {
       // handle error silently
@@ -142,6 +163,18 @@ export default function DashboardPage() {
     fetchData();
   }, [fetchData]);
 
+  function pctChange(current: number, previous: number): { text: string; positive: boolean } | null {
+    if (previous === 0 && current === 0) return null;
+    if (previous === 0) return { text: "+100%", positive: true };
+    const pct = ((current - previous) / previous) * 100;
+    return { text: `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`, positive: pct >= 0 };
+  }
+
+  const incomeChange = data ? pctChange(data.summary.totalIncome, data.summary.prevIncome) : null;
+  const expenseChange = data ? pctChange(data.summary.totalExpenses, data.summary.prevExpenses) : null;
+  const prevNet = (data?.summary.prevIncome ?? 0) - (data?.summary.prevExpenses ?? 0);
+  const netChange = data ? pctChange(data.summary.netBalance, prevNet) : null;
+
   const summaryCards = [
     {
       label: "Income",
@@ -151,6 +184,8 @@ export default function DashboardPage() {
       bg: "bg-emerald-500/10",
       borderHover: "hover:border-emerald-500/30",
       gradient: "from-emerald-500/20 to-emerald-500/0",
+      change: incomeChange,
+      changeGood: true,
     },
     {
       label: "Expenses",
@@ -160,6 +195,8 @@ export default function DashboardPage() {
       bg: "bg-red-500/10",
       borderHover: "hover:border-red-500/30",
       gradient: "from-red-500/15 to-red-500/0",
+      change: expenseChange,
+      changeGood: false,
     },
     {
       label: "Net Balance",
@@ -169,6 +206,8 @@ export default function DashboardPage() {
       bg: "bg-blue-500/10",
       borderHover: "hover:border-blue-500/30",
       gradient: "from-blue-500/20 to-blue-500/0",
+      change: netChange,
+      changeGood: true,
     },
     {
       label: "Budget Left",
@@ -178,6 +217,8 @@ export default function DashboardPage() {
       bg: "bg-amber-500/10",
       borderHover: "hover:border-amber-500/30",
       gradient: "from-amber-500/15 to-amber-500/0",
+      change: null,
+      changeGood: true,
     },
   ];
 
@@ -242,6 +283,15 @@ export default function DashboardPage() {
                         ? formatCurrency(card.value)
                         : "Not set"}
                     </p>
+                    {card.change && (
+                      <div className="mt-2 flex items-center gap-1.5">
+                        <TrendingUp className={`h-3 w-3 ${(card.change.positive === card.changeGood) ? "text-emerald-400" : "text-red-400 rotate-180"}`} />
+                        <span className={`text-xs font-medium ${(card.change.positive === card.changeGood) ? "text-emerald-400" : "text-red-400"}`}>
+                          {card.change.text}
+                        </span>
+                        <span className="text-xs text-slate-600">vs last month</span>
+                      </div>
+                    )}
                   </>
                 )}
               </div>
@@ -299,11 +349,126 @@ export default function DashboardPage() {
         </motion.div>
       </div>
 
+      {/* Savings Rate & Top Categories */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 items-stretch">
+        {/* Savings Rate */}
+        <motion.div
+          initial={prefersReduced ? {} : { opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.55 }}
+        >
+          <Card className="hover:border-emerald-500/20 transition-all duration-300 h-full">
+            <h3 className="text-sm font-medium text-slate-300 mb-5">Savings Rate</h3>
+            {loading ? (
+              <div className="flex items-center justify-center py-8"><Skeleton className="h-32 w-32 rounded-full" /></div>
+            ) : (() => {
+              const income = data?.summary.totalIncome ?? 0;
+              const expenses = data?.summary.totalExpenses ?? 0;
+              const saved = income - expenses;
+              const rate = income > 0 ? Math.max(0, Math.min(100, (saved / income) * 100)) : 0;
+              const circumference = 2 * Math.PI * 52;
+              const offset = circumference - (rate / 100) * circumference;
+              return (
+                <div className="flex flex-col items-center gap-5">
+                  <div className="relative">
+                    <svg width="140" height="140" viewBox="0 0 120 120">
+                      <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="10" />
+                      <motion.circle
+                        cx="60" cy="60" r="52" fill="none"
+                        stroke={rate >= 30 ? "#10b981" : rate >= 10 ? "#f59e0b" : "#ef4444"}
+                        strokeWidth="10" strokeLinecap="round"
+                        strokeDasharray={circumference}
+                        initial={{ strokeDashoffset: circumference }}
+                        animate={{ strokeDashoffset: offset }}
+                        transition={{ duration: 1.2, ease: "easeOut", delay: 0.3 }}
+                        transform="rotate(-90 60 60)"
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-2xl font-bold text-slate-100 font-[family-name:var(--font-heading)]">{rate.toFixed(0)}%</span>
+                      <span className="text-[10px] text-slate-500 uppercase tracking-wider">saved</span>
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm text-slate-300">
+                      You saved <span className="font-semibold text-emerald-400">{formatCurrency(Math.max(0, saved))}</span> of {formatCurrency(income)} earned
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {rate >= 30 ? "Excellent savings rate!" : rate >= 15 ? "Good progress, keep it up!" : income > 0 ? "Try to reduce expenses this month" : "Add income to track savings"}
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
+          </Card>
+        </motion.div>
+
+        {/* Top Spending Categories */}
+        <motion.div
+          initial={prefersReduced ? {} : { opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.6 }}
+        >
+          <Card className="hover:border-red-500/20 transition-all duration-300 h-full">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-sm font-medium text-slate-300">Top Spending</h3>
+              <Link href="/analytics" className="inline-flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors bg-blue-500/10 px-2.5 py-1 rounded-lg border border-blue-500/20 hover:bg-blue-500/15">
+                Details <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+            {loading ? (
+              <div className="space-y-4">
+                {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+              </div>
+            ) : !data?.topCategories.length ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <p className="text-sm text-slate-500">No expenses this month</p>
+                <p className="text-xs text-slate-600 mt-1">Add expenses to see your top categories</p>
+              </div>
+            ) : (() => {
+              const maxTotal = data.topCategories[0]?.total ?? 1;
+              return (
+                <div className="space-y-3">
+                  {data.topCategories.map((cat, i) => (
+                    <motion.div
+                      key={cat.name}
+                      initial={prefersReduced ? {} : { opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3, delay: 0.7 + i * 0.06 }}
+                      className="group/cat"
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm">
+                            {cat.icon || "📦"}
+                          </div>
+                          <span className="text-sm text-slate-300">{cat.name}</span>
+                        </div>
+                        <span className="text-sm font-semibold text-slate-100 tabular-nums">{formatCurrency(cat.total)}</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-white/[0.04] overflow-hidden">
+                        <motion.div
+                          className="h-full rounded-full"
+                          style={{ backgroundColor: cat.color || "#3b82f6" }}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${(cat.total / maxTotal) * 100}%` }}
+                          transition={{ duration: 0.8, ease: "easeOut", delay: 0.8 + i * 0.06 }}
+                        />
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              );
+            })()}
+          </Card>
+        </motion.div>
+      </div>
+
       {/* Quick Action */}
       <motion.div
         initial={prefersReduced ? {} : { opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.6 }}
+        transition={{ duration: 0.4, delay: 0.7 }}
       >
         <Link
           href="/insights"
