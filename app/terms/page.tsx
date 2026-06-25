@@ -3,15 +3,7 @@
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowLeft, FileText } from "lucide-react";
-
-function GridBg() {
-  return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-      <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`, backgroundSize: "60px 60px" }} />
-      <div className="absolute inset-0 bg-gradient-to-b from-[#060B18] via-transparent to-[#060B18]" />
-    </div>
-  );
-}
+import AnimatedBackground from "@/components/ui/AnimatedBackground";
 
 const sections = [
   { title: "1. Acceptance of Terms", body: "By accessing or using Financer, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the service." },
@@ -29,7 +21,7 @@ export default function TermsPage() {
 
   return (
     <div className="min-h-screen bg-[#060B18] text-slate-50 overflow-x-hidden">
-      <GridBg />
+      <AnimatedBackground />
 
       <div className="relative z-10 mx-auto max-w-4xl px-6 py-20">
         <motion.div initial={prefersReduced ? {} : { opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4 }}>
