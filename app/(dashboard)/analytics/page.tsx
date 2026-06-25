@@ -179,16 +179,16 @@ export default function AnalyticsPage() {
         </div>
       </motion.div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 items-stretch">
         <motion.div initial={prefersReduced ? {} : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.15 }}>
-          <Card className="hover:border-red-500/20 transition-all duration-300">
+          <Card className="hover:border-red-500/20 transition-all duration-300 h-full">
             <h3 className="text-sm font-medium text-slate-300 mb-4">Spending by Category</h3>
             <SpendingByCategory data={categoryData} loading={loading} />
           </Card>
         </motion.div>
 
         <motion.div initial={prefersReduced ? {} : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.25 }}>
-          <Card className="hover:border-blue-500/20 transition-all duration-300">
+          <Card className="hover:border-blue-500/20 transition-all duration-300 h-full">
             <h3 className="text-sm font-medium text-slate-300 mb-4">Income vs Expenses</h3>
             <IncomeVsExpense data={monthlyData} loading={loading} />
           </Card>

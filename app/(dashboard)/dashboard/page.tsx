@@ -251,13 +251,13 @@ export default function DashboardPage() {
       </div>
 
       {/* Charts & Transactions */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 items-stretch">
         <motion.div
           initial={prefersReduced ? {} : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.4 }}
         >
-          <Card className="group hover:border-blue-500/20 transition-all duration-300">
+          <Card className="group hover:border-blue-500/20 transition-all duration-300 h-full">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-medium text-slate-300">
                 Income vs Expenses
@@ -276,7 +276,7 @@ export default function DashboardPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.5 }}
         >
-          <Card className="group hover:border-blue-500/20 transition-all duration-300">
+          <Card className="group hover:border-blue-500/20 transition-all duration-300 h-full flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-medium text-slate-300">
                 Recent Transactions
@@ -288,11 +288,13 @@ export default function DashboardPage() {
                 View all <ArrowRight className="h-3 w-3" />
               </Link>
             </div>
-            <TransactionList
-              transactions={data?.recentTransactions || []}
-              loading={loading}
-              compact
-            />
+            <div className="flex-1">
+              <TransactionList
+                transactions={data?.recentTransactions || []}
+                loading={loading}
+                compact
+              />
+            </div>
           </Card>
         </motion.div>
       </div>
