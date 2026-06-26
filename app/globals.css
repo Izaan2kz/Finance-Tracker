@@ -23,6 +23,15 @@ body {
   scrollbar-color: #27272a transparent;
 }
 
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
 @keyframes slide-in-from-right {
   from {
     transform: translateX(100%);

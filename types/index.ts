@@ -5,6 +5,8 @@ export interface User {
   supabase_id: string;
   email: string;
   name: string | null;
+  occupation: string | null;
+  currency: string | null;
   monthly_budget: number | null;
   created_at: string;
   updated_at: string;

@@ -10,6 +10,7 @@ import Input from "@/components/ui/Input";
 import TransactionList from "@/components/transactions/TransactionList";
 import AddTransactionForm from "@/components/transactions/AddTransactionForm";
 import { useToast } from "@/components/ui/Toast";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import { Plus, ChevronLeft, ChevronRight, ArrowLeftRight, Search, Calendar } from "lucide-react";
 
 interface Transaction {
@@ -38,6 +39,7 @@ export default function TransactionsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const [filterType, setFilterType] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
@@ -104,7 +106,6 @@ export default function TransactionsPage() {
   }, [fetchTransactions]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this transaction?")) return;
     try {
       const res = await fetch(`/api/transactions/${id}`, { method: "DELETE" });
       if (res.ok) {
@@ -115,6 +116,8 @@ export default function TransactionsPage() {
       }
     } catch {
       toast("Network error", "error");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -254,7 +257,7 @@ export default function TransactionsPage() {
             transactions={transactions}
             loading={loading}
             onEdit={handleEdit}
-            onDelete={handleDelete}
+            onDelete={(id) => setDeletingId(id)}
           />
 
           {totalPages > 1 && (
@@ -321,6 +324,16 @@ export default function TransactionsPage() {
           />
         )}
       </Modal>
+
+      <ConfirmModal
+        open={!!deletingId}
+        onClose={() => setDeletingId(null)}
+        onConfirm={() => deletingId && handleDelete(deletingId)}
+        title="Delete Transaction"
+        message="This transaction will be permanently deleted. This action cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+      />
     </div>
   );
 }

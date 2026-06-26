@@ -25,6 +25,8 @@ export async function getAuthenticatedUser(): Promise<User | null> {
       supabase_id: supabaseUser.id,
       email: supabaseUser.email!,
       name: supabaseUser.user_metadata?.full_name || null,
+      occupation: supabaseUser.user_metadata?.occupation || null,
+      currency: "USD",
     })
     .select()
     .single();

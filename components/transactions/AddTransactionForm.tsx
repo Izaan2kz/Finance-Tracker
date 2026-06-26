@@ -49,8 +49,8 @@ export default function AddTransactionForm({
 
   useEffect(() => {
     fetch("/api/categories")
-      .then((r) => r.json())
-      .then((data) => setCategories(data))
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => setCategories(Array.isArray(data) ? data : []))
       .catch(() => {});
   }, []);
 
@@ -125,7 +125,7 @@ export default function AddTransactionForm({
           className={`flex-1 rounded-xl py-2.5 text-sm font-medium transition-all cursor-pointer ${
             type === "EXPENSE"
               ? "bg-red-600/20 text-red-400 border border-red-600/50"
-              : "bg-zinc-800 text-zinc-400 border border-zinc-700"
+              : "bg-white/[0.04] border-white/[0.08] text-slate-400 border border-white/[0.08]"
           }`}
         >
           Expense
@@ -136,7 +136,7 @@ export default function AddTransactionForm({
           className={`flex-1 rounded-xl py-2.5 text-sm font-medium transition-all cursor-pointer ${
             type === "INCOME"
               ? "bg-emerald-600/20 text-emerald-400 border border-emerald-600/50"
-              : "bg-zinc-800 text-zinc-400 border border-zinc-700"
+              : "bg-white/[0.04] border-white/[0.08] text-slate-400 border border-white/[0.08]"
           }`}
         >
           Income
@@ -181,13 +181,13 @@ export default function AddTransactionForm({
       />
 
       <div className="space-y-1.5">
-        <label htmlFor="note" className="block text-sm font-medium text-zinc-300">
+        <label htmlFor="note" className="block text-sm font-medium text-slate-300">
           Note (optional)
         </label>
         <textarea
           id="note"
           rows={2}
-          className="w-full rounded-xl border border-zinc-700 bg-zinc-800/50 px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+          className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] border-white/[0.08]/50 px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/30 focus:bg-white/[0.06] resize-none"
           placeholder="Additional notes..."
           value={note}
           onChange={(e) => setNote(e.target.value)}

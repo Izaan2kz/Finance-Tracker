@@ -7,6 +7,7 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { createClient } from "@/lib/supabase";
 import { useToast } from "@/components/ui/Toast";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import { Settings, User, DollarSign, Shield, Trash2, Globe, Info } from "lucide-react";
 import Link from "next/link";
 import { useCurrency, currencies } from "@/lib/currency";
@@ -26,6 +27,8 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [passwordData, setPasswordData] = useState({ current: "", newPass: "", confirm: "" });
   const [changingPassword, setChangingPassword] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const { currency, setCurrency, getCurrencyInfo } = useCurrency();
   const [currencySearch, setCurrencySearch] = useState("");
 
@@ -42,12 +45,17 @@ export default function SettingsPage() {
 
         supabase
           .from("users")
-          .select("monthly_budget")
+          .select("monthly_budget, occupation, currency")
           .eq("supabase_id", user.id)
           .single()
           .then(({ data }) => {
-            if (data?.monthly_budget) {
-              setProfile((p) => ({ ...p, monthlyBudget: String(data.monthly_budget) }));
+            if (data) {
+              setProfile((p) => ({
+                ...p,
+                monthlyBudget: data.monthly_budget ? String(data.monthly_budget) : "",
+                occupation: data.occupation || p.occupation,
+              }));
+              if (data.currency) setCurrency(data.currency);
             }
           });
       }
@@ -67,13 +75,15 @@ export default function SettingsPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const budget = profile.monthlyBudget ? parseFloat(profile.monthlyBudget) : null;
-        await supabase
+        const { error: dbError } = await supabase
           .from("users")
           .update({
             name: profile.name.trim(),
+            occupation: profile.occupation.trim() || null,
             monthly_budget: budget,
           })
           .eq("supabase_id", user.id);
+        if (dbError) console.error("DB update error:", JSON.stringify(dbError), "user.id:", user.id);
       }
 
       toast("Profile updated", "success");
@@ -108,8 +118,26 @@ export default function SettingsPage() {
   };
 
   const handleDeleteAccount = async () => {
-    if (!confirm("Are you sure you want to delete your account? This action cannot be undone. All your data will be permanently removed.")) return;
-    toast("Please contact support to delete your account", "info");
+    setDeleting(true);
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: dbUser } = await supabase.from("users").select("id").eq("supabase_id", user.id).single();
+      if (dbUser) {
+        await supabase.from("ai_insights").delete().eq("user_id", dbUser.id);
+        await supabase.from("transactions").delete().eq("user_id", dbUser.id);
+        await supabase.from("categories").delete().eq("user_id", dbUser.id);
+        await supabase.from("users").delete().eq("id", dbUser.id);
+      }
+      await supabase.auth.signOut();
+      window.location.href = "/login";
+    } catch {
+      toast("Failed to delete account", "error");
+    } finally {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+    }
   };
 
   if (loading) return null;
@@ -163,7 +191,13 @@ export default function SettingsPage() {
               {filtered.map((c) => (
                 <button
                   key={c.code}
-                  onClick={() => { setCurrency(c.code); setCurrencySearch(""); toast(`Currency set to ${c.name}`, "success"); }}
+                  onClick={async () => {
+                    setCurrency(c.code); setCurrencySearch("");
+                    const supabase = createClient();
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (user) await supabase.from("users").update({ currency: c.code }).eq("supabase_id", user.id);
+                    toast(`Currency set to ${c.name}`, "success");
+                  }}
                   className={`w-full flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all cursor-pointer ${
                     currency === c.code
                       ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
@@ -272,7 +306,7 @@ export default function SettingsPage() {
             ))}
           </div>
           <p className="text-xs text-slate-600">This action is irreversible. Please be certain.</p>
-          <Button variant="danger" onClick={handleDeleteAccount}>
+          <Button variant="danger" onClick={() => setShowDeleteConfirm(true)}>
             Delete Account
           </Button>
         </div>
@@ -334,6 +368,17 @@ export default function SettingsPage() {
           );
         })}
       </div>
+
+      <ConfirmModal
+        open={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeleteAccount}
+        title="Delete Account"
+        message="All your transactions, categories, insights, and account data will be permanently erased. This cannot be undone."
+        confirmLabel="Delete My Account"
+        variant="danger"
+        loading={deleting}
+      />
     </div>
   );
 }
