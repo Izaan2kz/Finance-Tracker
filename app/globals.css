@@ -51,6 +51,12 @@ input[type="number"] {
   animation: slide-in-from-right 0.3s ease-out;
 }
 
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 .line-clamp-6 {
   display: -webkit-box;
   -webkit-line-clamp: 6;

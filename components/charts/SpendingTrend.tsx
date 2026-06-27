@@ -30,8 +30,12 @@ export default function SpendingTrend({ data, loading }: SpendingTrendProps) {
 
   if (data.length === 0) {
     return (
-      <div className="flex items-center justify-center py-12 text-sm text-zinc-500">
-        No spending data to display
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-4 mb-4">
+          <svg className="h-8 w-8 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 20h18" /><path d="M3 17l4-5 4 3 4-6 5 4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </div>
+        <p className="text-sm font-medium text-slate-400">No trend data yet</p>
+        <p className="text-xs text-slate-600 mt-1">Spending trends will appear as you add expenses</p>
       </div>
     );
   }

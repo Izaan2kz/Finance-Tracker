@@ -32,8 +32,12 @@ export default function IncomeVsExpense({ data, loading }: IncomeVsExpenseProps)
 
   if (data.length === 0) {
     return (
-      <div className="flex items-center justify-center py-12 text-sm text-zinc-500">
-        No data to display
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-4 mb-4">
+          <svg className="h-8 w-8 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="4" height="18" rx="1" /><rect x="10" y="8" width="4" height="13" rx="1" /><rect x="17" y="5" width="4" height="16" rx="1" /></svg>
+        </div>
+        <p className="text-sm font-medium text-slate-400">No data yet</p>
+        <p className="text-xs text-slate-600 mt-1">Income and expenses will show here over time</p>
       </div>
     );
   }

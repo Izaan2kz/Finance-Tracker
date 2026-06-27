@@ -55,9 +55,11 @@ export default function InsightPanel({ scope }: InsightPanelProps) {
     return (
       <Card>
         <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-indigo-400 animate-pulse" />
-            <span className="text-sm text-zinc-400">Analyzing your finances...</span>
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-violet-500/10 border border-violet-500/20 p-2">
+              <Sparkles className="h-5 w-5 text-violet-400 animate-pulse" />
+            </div>
+            <span className="text-sm text-slate-400">Analyzing your finances...</span>
           </div>
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-3/4" />
@@ -72,12 +74,14 @@ export default function InsightPanel({ scope }: InsightPanelProps) {
 
   if (!generated) {
     return (
-      <Card className="flex flex-col items-center justify-center py-12 text-center">
-        <Sparkles className="h-12 w-12 text-indigo-400/50 mb-4" />
-        <h3 className="text-lg font-medium text-zinc-200 mb-2">
+      <Card className="flex flex-col items-center justify-center py-14 text-center">
+        <div className="rounded-2xl bg-violet-500/10 border border-violet-500/20 p-5 mb-5">
+          <Sparkles className="h-10 w-10 text-violet-400" />
+        </div>
+        <h3 className="text-lg font-semibold text-slate-100 mb-2 font-[family-name:var(--font-heading)]">
           AI-Powered Insights
         </h3>
-        <p className="text-sm text-zinc-500 mb-6 max-w-sm">
+        <p className="text-sm text-slate-400 mb-6 max-w-sm leading-relaxed">
           Get personalized spending analysis, pattern detection, and savings
           suggestions powered by Google Gemini.
         </p>

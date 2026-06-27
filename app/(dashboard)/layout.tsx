@@ -1,5 +1,6 @@
 import DashboardNav from "@/components/layout/DashboardNav";
 import DashboardBackground from "@/components/layout/DashboardBackground";
+import Onboarding from "@/components/ui/Onboarding";
 import { ToastProvider } from "@/components/ui/Toast";
 import { CurrencyProvider } from "@/lib/currency";
 
@@ -17,6 +18,7 @@ export default function DashboardLayout({
           <main className="relative z-10 mx-auto max-w-7xl px-4 pt-20 pb-24 lg:px-8 lg:pb-8">
             {children}
           </main>
+          <Onboarding />
         </div>
       </ToastProvider>
     </CurrencyProvider>

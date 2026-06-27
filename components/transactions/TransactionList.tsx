@@ -1,7 +1,9 @@
 "use client";
 
+import { motion, AnimatePresence } from "framer-motion";
 import TransactionItem from "./TransactionItem";
 import Skeleton from "@/components/ui/Skeleton";
+import { ArrowLeftRight } from "lucide-react";
 
 interface Transaction {
   id: string;
@@ -53,9 +55,11 @@ export default function TransactionList({
   if (transactions.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
-        <p className="text-4xl mb-3">📭</p>
-        <p className="text-sm text-zinc-400">{emptyMessage}</p>
-        <p className="text-xs text-zinc-600 mt-1">
+        <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-4 mb-4">
+          <ArrowLeftRight className="h-8 w-8 text-slate-600" />
+        </div>
+        <p className="text-sm font-medium text-slate-400">{emptyMessage}</p>
+        <p className="text-xs text-slate-600 mt-1">
           Add your first transaction to get started
         </p>
       </div>
@@ -64,15 +68,24 @@ export default function TransactionList({
 
   return (
     <div className="divide-y divide-white/[0.04]">
-      {transactions.map((t) => (
-        <TransactionItem
-          key={t.id}
-          transaction={t}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          compact={compact}
-        />
-      ))}
+      <AnimatePresence initial={false}>
+        {transactions.map((t, i) => (
+          <motion.div
+            key={t.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, x: -20, height: 0 }}
+            transition={{ duration: 0.25, delay: i * 0.03 }}
+          >
+            <TransactionItem
+              transaction={t}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              compact={compact}
+            />
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </div>
   );
 }

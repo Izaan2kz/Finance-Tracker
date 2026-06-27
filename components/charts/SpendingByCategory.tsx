@@ -33,8 +33,12 @@ export default function SpendingByCategory({ data, loading }: SpendingByCategory
 
   if (data.length === 0) {
     return (
-      <div className="flex items-center justify-center py-12 text-sm text-zinc-500">
-        No expense data to display
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-4 mb-4">
+          <svg className="h-8 w-8 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10" /><path d="M12 2a10 10 0 0 1 7.07 2.93" /><path d="M12 2v10l7.07-7.07" /></svg>
+        </div>
+        <p className="text-sm font-medium text-slate-400">No spending data yet</p>
+        <p className="text-xs text-slate-600 mt-1">Add expenses to see category breakdown</p>
       </div>
     );
   }
