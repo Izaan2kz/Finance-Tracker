@@ -187,7 +187,7 @@ export default function AddTransactionForm({
         <textarea
           id="note"
           rows={2}
-          className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] border-white/[0.08]/50 px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/30 focus:bg-white/[0.06] resize-none"
+          className="w-full rounded-xl border border-white/[0.08] bg-[#0f1629] px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/30 focus:bg-[#131b33] resize-none"
           placeholder="Additional notes..."
           value={note}
           onChange={(e) => setNote(e.target.value)}

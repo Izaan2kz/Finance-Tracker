@@ -43,8 +43,8 @@ export default function Select({ label, error, value, onChange, options, classNa
         disabled={disabled}
         onClick={() => setOpen(!open)}
         className={cn(
-          "w-full flex items-center justify-between rounded-xl border bg-white/[0.04] px-4 py-2.5 text-sm text-left transition-all duration-200 cursor-pointer",
-          open ? "ring-2 ring-blue-500/50 border-blue-500/30 bg-white/[0.06]" : error ? "border-red-500/50" : "border-white/[0.08]",
+          "w-full flex items-center justify-between rounded-xl border bg-[#0f1629] px-4 py-2.5 text-sm text-left transition-all duration-200 cursor-pointer",
+          open ? "ring-2 ring-blue-500/50 border-blue-500/30 bg-[#131b33]" : error ? "border-red-500/50" : "border-white/[0.08]",
           disabled && "opacity-50 cursor-not-allowed",
           className
         )}

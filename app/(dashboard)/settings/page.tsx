@@ -185,7 +185,7 @@ export default function SettingsPage() {
               placeholder="Search currencies..."
               value={currencySearch}
               onChange={(e) => setCurrencySearch(e.target.value)}
-              className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/30"
+              className="w-full rounded-xl border border-white/[0.08] bg-[#0f1629] px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/30 focus:bg-[#131b33]"
             />
             <div className="max-h-48 overflow-y-auto space-y-1 rounded-xl border border-white/[0.06] bg-white/[0.02] p-2">
               {filtered.map((c) => (

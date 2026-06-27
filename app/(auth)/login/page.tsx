@@ -126,7 +126,7 @@ export default function LoginPage() {
                       placeholder="John Doe"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] pl-10 pr-4 py-3 text-sm text-slate-100 placeholder-slate-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/30 focus:bg-white/[0.06]"
+                      className="w-full rounded-xl border border-white/[0.08] bg-[#0f1629] pl-10 pr-4 py-3 text-sm text-slate-100 placeholder-slate-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/30 focus:bg-[#131b33]"
                     />
                   </div>
                 </motion.div>
@@ -143,7 +143,7 @@ export default function LoginPage() {
                   placeholder="yourname@gmail.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] pl-10 pr-4 py-3 text-sm text-slate-100 placeholder-slate-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/30 focus:bg-white/[0.06]"
+                  className="w-full rounded-xl border border-white/[0.08] bg-[#0f1629] pl-10 pr-4 py-3 text-sm text-slate-100 placeholder-slate-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/30 focus:bg-[#131b33]"
                 />
               </div>
             </div>
@@ -158,7 +158,7 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] pl-10 pr-11 py-3 text-sm text-slate-100 placeholder-slate-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/30 focus:bg-white/[0.06]"
+                  className="w-full rounded-xl border border-white/[0.08] bg-[#0f1629] pl-10 pr-11 py-3 text-sm text-slate-100 placeholder-slate-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/30 focus:bg-[#131b33]"
                 />
                 <button
                   type="button"
