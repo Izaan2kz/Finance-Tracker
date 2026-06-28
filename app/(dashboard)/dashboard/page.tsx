@@ -312,7 +312,7 @@ export default function DashboardPage() {
       </motion.div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 items-stretch">
         {summaryCards.map((card, i) => (
           <motion.div
             key={card.label}
@@ -320,7 +320,7 @@ export default function DashboardPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.1 + i * 0.08 }}
           >
-            <div className={`group relative rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 backdrop-blur-xl transition-all duration-300 ${card.borderHover} hover:bg-white/[0.05] cursor-default`}>
+            <div className={`group relative rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 backdrop-blur-xl transition-all duration-300 ${card.borderHover} hover:bg-white/[0.05] cursor-default h-full`}>
               <div className={`absolute inset-0 rounded-2xl bg-gradient-to-b ${card.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
               <div className="relative">
                 {loading ? (
